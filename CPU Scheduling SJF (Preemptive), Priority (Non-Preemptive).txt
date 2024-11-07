@@ -1,0 +1,166 @@
+import java.util.Scanner;
+
+class Process {
+    int pid;
+    int waitingTime;
+    int arrivalTime;
+    int burstTime;
+    int turnAroundTime;
+    int timeToComplete;
+    int completionTime = 0;
+    int priority;
+
+    Process(int pid, int arrivalTime, int burstTime, int priority) {
+        this.pid = pid;
+        this.arrivalTime = arrivalTime;
+        this.burstTime = burstTime;
+        this.priority = priority;
+        this.timeToComplete = burstTime;
+    }
+}
+
+public class Scheduler1 {
+    static Scanner s = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        System.out.println("NAME: Prachi Karande");
+        System.out.println("ROLL NO.: TACO22134");
+
+        System.out.print("Enter the number of processes: ");
+        int n = s.nextInt();
+
+        Process[] myProcess = new Process[n];
+        Process[] originalProcesses = new Process[n];
+
+        while (true) {
+            System.out.println("\nSelect the type of scheduler to be used:");
+            System.out.println("1. SJF (Preemptive)");
+            System.out.println("2. Priority (Non-preemptive)");
+            System.out.println("3. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = s.nextInt();
+
+            inputProcessData(myProcess, originalProcesses, n);  // Ask for new process data
+
+            switch (choice) {
+                case 1:
+                    SJF(myProcess);
+                    break;
+                case 2:
+                    PriorityScheduling(myProcess);
+                    break;
+                case 3:
+                    s.close();
+                    System.exit(1);
+                    break;
+                default:
+                    System.out.println("Incorrect Choice");
+                    break;
+            }
+        }
+    }
+
+    static void inputProcessData(Process[] myProcess, Process[] originalProcesses, int n) {
+        System.out.println("\nEnter Arrival time, Burst Time, and Priority for each process:");
+
+        for (int i = 0; i < n; i++) {
+            System.out.print("Process " + (i + 1) + ": ");
+            int arrivalTime = s.nextInt();
+            int burstTime = s.nextInt();
+            int priority = s.nextInt();
+
+            myProcess[i] = new Process(i + 1, arrivalTime, burstTime, priority);
+            originalProcesses[i] = new Process(i + 1, arrivalTime, burstTime, priority);  // Store a copy for reset
+        }
+    }
+
+    static void resetProcesses(Process[] myProcess, Process[] originalProcesses) {
+        for (int i = 0; i < myProcess.length; i++) {
+            myProcess[i].waitingTime = 0;
+            myProcess[i].turnAroundTime = 0;
+            myProcess[i].completionTime = 0;
+            myProcess[i].timeToComplete = originalProcesses[i].burstTime;
+        }
+    }
+
+    static void SJF(Process[] myProcess) {
+        int currentTime = 0, completedProcesses = 0;
+
+        while (completedProcesses < myProcess.length) {
+            Process currentProcess = null;
+
+            for (Process process : myProcess) {
+                if (process.arrivalTime <= currentTime && process.timeToComplete > 0) {
+                    if (currentProcess == null || process.timeToComplete < currentProcess.timeToComplete) {
+                        currentProcess = process;
+                    }
+                }
+            }
+
+            if (currentProcess != null) {
+                currentProcess.timeToComplete--;
+                currentTime++;
+
+                if (currentProcess.timeToComplete == 0) {
+                    currentProcess.completionTime = currentTime;
+                    currentProcess.turnAroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+                    currentProcess.waitingTime = currentProcess.turnAroundTime - currentProcess.burstTime;
+                    completedProcesses++;
+                }
+            } else {
+                currentTime++;
+            }
+        }
+
+        System.out.println("\nSJF (Preemptive) Results:");
+        displayResults(myProcess);
+    }
+
+    static void PriorityScheduling(Process[] myProcess) {
+        int currentTime = 0, completedProcesses = 0;
+
+        while (completedProcesses < myProcess.length) {
+            Process currentProcess = null;
+
+            for (Process process : myProcess) {
+                if (process.arrivalTime <= currentTime && process.timeToComplete > 0) {
+                    if (currentProcess == null || process.priority < currentProcess.priority) {
+                        currentProcess = process;
+                    }
+                }
+            }
+
+            if (currentProcess != null) {
+                currentTime += currentProcess.burstTime;
+                currentProcess.completionTime = currentTime;
+                currentProcess.turnAroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+                currentProcess.waitingTime = currentProcess.turnAroundTime - currentProcess.burstTime;
+                currentProcess.timeToComplete = 0;
+                completedProcesses++;
+            } else {
+                currentTime++;
+            }
+        }
+
+        System.out.println("\nPriority Scheduling (Non-preemptive) Results:");
+        displayResults(myProcess);
+    }
+
+    static void displayResults(Process[] myProcess) {
+        System.out.println("Process ID\tArrival Time\tBurst Time\tPriority\tWaiting Time\tTurnaround Time\tCompletion Time");
+        for (Process p : myProcess) {
+            System.out.println(p.pid + "\t\t" + p.arrivalTime + "\t\t" + p.burstTime + "\t\t" + p.priority + "\t\t" +
+                    p.waitingTime + "\t\t" + p.turnAroundTime + "\t\t" + p.completionTime);
+        }
+
+        double totalWaitingTime = 0;
+        double totalTurnaroundTime = 0;
+        for (Process p : myProcess) {
+            totalWaitingTime += p.waitingTime;
+            totalTurnaroundTime += p.turnAroundTime;
+        }
+
+        System.out.printf("Average Waiting Time: %.2f\n", totalWaitingTime / myProcess.length);
+        System.out.printf("Average Turnaround Time: %.2f\n", totalTurnaroundTime / myProcess.length);
+    }
+}
